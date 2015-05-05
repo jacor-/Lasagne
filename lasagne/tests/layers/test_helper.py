@@ -1,11 +1,12 @@
 import pytest
+import numpy as np
 import theano
 
 
 import lasagne
 
 
-class TestGetAllLayers:
+class TestGetAllLayers(object):
     def test_stack(self):
         from lasagne.layers import InputLayer, DenseLayer, get_all_layers
         from itertools import permutations
@@ -65,3 +66,69 @@ class TestGetAllLayers:
         l4 = ElemwiseSumLayer([l2, l3])
         l5 = DenseLayer(l4, 40)
         assert get_all_layers(l5) == [l1, l2, l3, l4, l5]
+
+
+class TestGetAllParams(object):
+    def test_get_all_params(self):
+        from lasagne.layers import (InputLayer, DenseLayer, get_all_params)
+        l1 = InputLayer((10, 20))
+        l2 = DenseLayer(l1, 30)
+        l3 = DenseLayer(l2, 40)
+
+        assert get_all_params(l3) == l2.get_params() + l3.get_params()
+        assert (get_all_params(l3, regularizable=False) ==
+                (l2.get_params(regularizable=False) +
+                 l3.get_params(regularizable=False)))
+
+        assert (get_all_params(l3, regularizable=True) ==
+                (l2.get_params(regularizable=True) +
+                 l3.get_params(regularizable=True)))
+
+
+class TestCountParams(object):
+    def test_get_all_params(self):
+        from lasagne.layers import (InputLayer, DenseLayer, count_params)
+        l1 = InputLayer((10, 20))
+        l2 = DenseLayer(l1, 30)
+        l3 = DenseLayer(l2, 40)
+
+        num_weights = 20 * 30 + 30 * 40
+        num_biases = 30 + 40
+
+        assert count_params(l3, regularizable=True) == num_weights
+        assert count_params(l3, regularizable=False) == num_biases
+        assert count_params(l3) == num_weights + num_biases
+
+
+class TestGetAllParamValues(object):
+    def test_get_all_param_values(self):
+        from lasagne.layers import (InputLayer, DenseLayer,
+                                    get_all_param_values)
+        l1 = InputLayer((10, 20))
+        l2 = DenseLayer(l1, 30)
+        l3 = DenseLayer(l2, 40)
+
+        pvs = get_all_param_values(l3)
+        assert len(pvs) == 4
+
+
+class TestSetAllParamValues(object):
+    def test_set_all_param_values(self):
+        from lasagne.layers import (InputLayer, DenseLayer,
+                                    set_all_param_values)
+        from lasagne.utils import floatX
+
+        l1 = InputLayer((10, 20))
+        l2 = DenseLayer(l1, 30)
+        l3 = DenseLayer(l2, 40)
+
+        a = floatX(np.random.normal(0, 1, (1, 1)))
+        b = floatX(np.random.normal(0, 1, (1,)))
+        set_all_param_values(l3, [a, b, a, b])
+        assert np.allclose(l3.W.get_value(), a)
+        assert np.allclose(l3.b.get_value(), b)
+        assert np.allclose(l2.W.get_value(), a)
+        assert np.allclose(l2.b.get_value(), b)
+
+        with pytest.raises(ValueError):
+            set_all_param_values(l3, [a, b, a])
