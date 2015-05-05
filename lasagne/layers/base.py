@@ -202,6 +202,7 @@ class MultipleInputsLayer(Layer):
                              else incoming
                              for incoming in incomings]
         self.name = name
+        self.params = OrderedDict()
 
     def get_output_shape(self):
         return self.get_output_shape_for(self.input_shapes)

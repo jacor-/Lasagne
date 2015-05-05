@@ -10,8 +10,6 @@ __all__ = [
     "get_all_layers",
     "get_all_layers_old",
     "get_all_params",
-    "get_all_bias_params",
-    "get_all_non_bias_params",
     "count_params",
     "get_all_param_values",
     "set_all_param_values",
